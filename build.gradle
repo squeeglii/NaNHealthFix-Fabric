@@ -101,5 +101,5 @@ jar {
 }
 
 remapJar {
-    archiveClassifier.set("release")
+    archiveClassifier.set("")
 }
