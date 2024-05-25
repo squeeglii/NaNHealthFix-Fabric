@@ -1,0 +1,105 @@
+plugins {
+    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'maven-publish'
+}
+
+
+boolean isModVersionDefined = project.properties["mod_version"] == null ||
+        project.properties["mod_version"].toString().length() == 0
+
+String modVer = isModVersionDefined
+        ? "indev"
+        : project.properties["mod_version"].toString()
+
+group = project.maven_group
+version = "%s+%s.fabric".formatted(modVer, project.properties["minecraft_version"])
+
+loom {
+    accessWidenerPath = file("src/main/resources/nanfix.accesswidener")
+
+    runs {
+        client {
+            runDir "run/client"
+            ideConfigGenerated true
+        }
+
+        server {
+            runDir "run/server"
+            ideConfigGenerated true
+        }
+    }
+}
+
+repositories {
+
+    // Mappings
+    maven {
+        name = 'ParchmentMC'
+        url = "https://maven.parchmentmc.org/"
+    }
+
+    // Mod Deps
+    maven { url "https://maven.shedaniel.me/" }
+    maven { url "https://maven.terraformersmc.com/releases/" }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+
+        if(project.parchment_version != "")
+            parchment("org.parchmentmc.data:${project.parchment_version}@zip")
+    }
+
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+
+    HashMap modifiedSrc = new HashMap<>(project.properties)
+    filesMatching("fabric.mod.json") {
+        expand modifiedSrc
+    }
+}
+
+def targetJavaVersion = 17
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(targetJavaVersion)
+    }
+
+    // Shows details related to the xlint "unchecked" and "derecation" warning notes.
+    if(project.properties["show_dev_warnings"] == "true") {
+        it.options.deprecation = true
+        it.options.compilerArgs << '-Xlint:unchecked'
+    }
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+
+    archivesBaseName = project.archives_base_name
+
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
+}
+
+remapJar {
+    archiveClassifier.set("release")
+}

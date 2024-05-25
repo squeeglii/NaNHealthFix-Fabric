@@ -1,0 +1,22 @@
+{
+    "schemaVersion": 1,
+    "id": "nanfix",
+    "version": "${version}",
+    "name": "NaNHealthFix-Fabric",
+    "description": "Fix errors due to invalid health values with better validation",
+    "authors": [ "Squeeglii" ],
+    "contact": {},
+    "license": "MIT",
+    "icon": "assets/nanfix/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [ "me.squeeglii.mod.nanfix.NaNFixerFabric" ]
+    },
+    "mixins": [ "nanfix.mixins.json" ],
+    "accessWidener": "nanfix.accesswidener",
+    "depends": {
+        "fabricloader": "*",
+        "fabric": "*",
+        "minecraft": "*"
+    }
+}
